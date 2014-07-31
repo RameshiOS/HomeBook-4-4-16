@@ -10,7 +10,117 @@
 #warning "This project uses features only available in iOS SDK 5.0 and later."
 #endif
 
+#define STATUSBAR_ORIENTATION  [[UIApplication sharedApplication] statusBarOrientation]
+
 #ifdef __OBJC__
     #import <UIKit/UIKit.h>
     #import <Foundation/Foundation.h>
+#import "SWRevealViewController.h"
+
 #endif
+
+
+#define DEMO_USERNAME @"test2@manulogix.com"
+#define DEMO_PASSWORD @"demo123"
+#define DEMO_USERTYPE @"Demo"
+#define LOGIN_USERTYPE @"Login"
+
+#define ALERT_MSG_TITLE                 @"RHM"
+#define LOGIN_TYPE                      @"Login"
+#define SIGNUP_TYPE                     @"Signup"
+
+#define SYNC_HOUSE_TYPE                 @"House"
+#define SYNC_ROOM_TYPE                  @"Room"
+#define SYNC_ITEM_TYPE                  @"Item"
+#define DELETE_HOUSE                    @"DeleteHouse"
+#define DELETE_ROOM                     @"DeleteRoom"
+#define DELETE_ITEM                     @"DeleteItem"
+#define LOGOUT_TYPE                     @"Logout"
+#define LOOKUP_TYPE                     @"Lookup"
+#define YEAR_INVALID                    @"Invalid Year"
+#define ITEMPDF_TYPE                    @"ItemPDF"
+#define ITEM_PDF_FAILED                 @"Failed to load item pdf."
+#define INVALID_MAX_LENGTH              @"Warning! Allows maximum of %d characters."
+#define INVALID_EMAIL                   @"Please enter valid email."
+#define INVALID_PHONE                   @"Please enter valid phone."
+
+// alert messages
+
+#define DATE_INVALID    @"Invalid Date"
+#define SYNC_SUCCESS    @"Thanks, your device is updated."
+
+//STATUS CODE ALERT
+#define STATUS_CODE_FAILED_ERROR        @"Communication failed with server. Please try again"//after getting response if status code !=200
+
+#define IS_EMPTY(x) (x==nil||[x isEqualToString:@""]) // to check empty test field
+
+#define SYSTEM_VERSION_LESS_THAN(v)                 ([[[UIDevice currentDevice] systemVersion] compare:v options:NSNumericSearch] == NSOrderedAscending)
+
+
+// indicator values
+#define WSI_LOADING_TEXT                @"Loading"
+#define REQUEST_TIMEOUT_INTERVAL        300.0
+
+//#define REQ_URL                       @"http://www.portal.oralhs.com/FormManager/FormService.svc/processrequest"
+//#define REQ_URL                       @"http://portal.tristarcnc.com/TriStarService/Tristarservice.svc/ProcessRequest"
+
+//Live System
+//#define LOGIN_REQUEST_URL             @"http://74.208.78.13:81/service/loginaccess"
+//#define SYNC_REQ_URL                  @"http://74.208.78.13:81/service/syncdata"
+//#define LOGOUT_REQUEST_URL            @"http://74.208.78.13:81/service/logoutservice"
+//#define ITEMPDF_REQUEST_URL           @"http://74.208.78.13:81/service/generatepdf"
+
+
+//Rajesh System
+//#define LOGIN_REQUEST_URL           @"http://192.168.137.20/service/loginaccess"
+//#define SYNC_REQ_URL                @"http://192.168.137.20/service/syncdata"
+//#define LOGOUT_REQUEST_URL          @"http://192.168.137.20/service/logoutservice"
+//#define SIGNUP_REQUEST_URL          @"http://192.168.137.20/service/signup"
+//#define ITEMPDF_REQUEST_URL         @"http://192.168.137.20/service/generatepdf"
+
+// Https urls
+
+
+//Live (Dnt use for testing)
+
+#define LOGIN_REQUEST_URL           @"https://www.royalhousemanagement.com/service/loginaccess"
+#define SIGNUP_REQUEST_URL          @"https://www.royalhousemanagement.com/service/signup"
+#define SYNC_REQ_URL                @"https://www.royalhousemanagement.com/service/syncdata"
+#define LOGOUT_REQUEST_URL          @"https://www.royalhousemanagement.com/service/logoutservice"
+#define ITEMPDF_REQUEST_URL         @"https://www.royalhousemanagement.com/service/generatepdf"
+
+// test
+//#define LOGIN_REQUEST_URL           @"http://test.royalhousemanagement.com/service/loginaccess"
+//#define SIGNUP_REQUEST_URL          @"http://test.royalhousemanagement.com/service/signup"
+//#define SYNC_REQ_URL                @"http://test.royalhousemanagement.com/service/syncdata"
+//#define LOGOUT_REQUEST_URL          @"http://test.royalhousemanagement.com/service/logoutservice"
+//#define ITEMPDF_REQUEST_URL         @"http://test.royalhousemanagement.com/service/generatepdf"
+
+
+
+// http urls
+//#define LOGIN_REQUEST_URL           @"http://www.royalhousemanagement.com/service/loginaccess"
+//#define SIGNUP_REQUEST_URL          @"http://www.royalhousemanagement.com/service/signup"
+//#define SYNC_REQ_URL                @"http://www.royalhousemanagement.com/service/syncdata"
+//#define LOGOUT_REQUEST_URL          @"http://www.royalhousemanagement.com/service/logoutservice"
+//#define ITEMPDF_REQUEST_URL         @"http://www.royalhousemanagement.com/service/generatepdf"
+
+
+//#define LOGIN_REQUEST_URL           @"http://test.royalhousemanagement.com/service/loginaccess"
+//#define SIGNUP_REQUEST_URL          @"http://test.royalhousemanagement.com/service/signup"
+//#define SYNC_REQ_URL                @"http://test.royalhousemanagement.com/service/syncdata"
+//#define LOGOUT_REQUEST_URL          @"http://test.royalhousemanagement.com/service/logoutservice"
+//#define ITEMPDF_REQUEST_URL         @"http://test.royalhousemanagement.com/service/generatepdf"
+
+ //#define LOGIN_REQUEST_URL           @"http://rhm.restaurantbash.com:80/service/loginaccess"
+//#define SIGNUP_REQUEST_URL           @"http://rhm.restaurantbash.com:80/service/signup"
+//#define SYNC_REQ_URL                @"http://rhm.restaurantbash.com:80/service/syncdata"
+//#define LOGOUT_REQUEST_URL          @"http://rhm.restaurantbash.com:80/service/logoutservice"
+//#define ITEMPDF_REQUEST_URL          @"http://rhm.restaurantbash.com:80/service/generatepdf"
+
+
+//#define LOGIN_REQUEST_URL           @"http://rhm.restaurantbash.com/dashboard/login"
+//#define SYNC_REQ_URL                @"http://rhm.restaurantbash.com/dashboard/syncdata"
+//#define LOGOUT_REQUEST_URL          @"http://rhm.restaurantbash.com/dashboard/logoutservice"
+//#define ITEMPDF_REQUEST_URL         @"http://rhm.restaurantbash.com/dashboard/generatepdf"
+//#define SIGNUP_REQUEST_URL           @"http://rhm.restaurantbash.com/dashboard/signup"

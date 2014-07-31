@@ -1,0 +1,265 @@
+
+//
+//  WebServiceInterface.m
+//  DDMForms
+//
+//  Created by Manulogix on 19/07/13.
+//  Copyright (c) 2013 Manulogix. All rights reserved.
+//
+
+#import "WebServiceInterface.h"
+#import "ViewController.h"
+#import "WSLogin.h"
+#import "WSGetForm.h"
+#import "WSGetLookUp.h"
+
+#import <QuartzCore/QuartzCore.h>
+
+
+@interface WebServiceInterface ()
+
+@property(nonatomic, strong) UIViewController    *wsiParentVC;
+@property(nonatomic, strong) MBProgressHUD       *wsiActivityIndicator;
+@end
+
+@implementation WebServiceInterface
+@synthesize receivedData= _recievedData;
+@synthesize delegate;
+@synthesize wsiParentVC;
+@synthesize wsiActivityIndicator;
+
+#pragma mark -
+#pragma mark init Methods
+-(id) initWithVC: (UIViewController *)parentVC {
+    self = [super init];
+    if(self) {
+        self.wsiParentVC = parentVC; // DO NOT allocate as we should point only
+        //        self.delegate    = (id)parentVC; // DO NOT allocate as we should point only
+    }
+    return self;
+}
+
+- (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil{
+    self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
+    if (self) {
+    }return self;
+}
+
+#pragma mark -
+#pragma mark Progress Bar Hud
+
+#pragma mark - Indicator APIs
+
+-(void) releaseActivityIndicator {
+    if (wsiActivityIndicator) {
+        [wsiActivityIndicator removeFromSuperview];
+        //        RELEASE_MEM(wsiActivityIndicator);
+    }
+}
+- (void) myTask {
+	sleep(REQUEST_TIMEOUT_INTERVAL);
+}
+- (void) hideIndicator {
+    [wsiActivityIndicator setHidden:YES];
+}
+- (void) showIndicator {
+    [self releaseActivityIndicator];
+    wsiActivityIndicator             = [[MBProgressHUD alloc] initWithView:wsiParentVC.view];
+    wsiActivityIndicator.minShowTime = 30.0f;
+    wsiActivityIndicator.delegate    = self;
+    wsiActivityIndicator.labelText   = WSI_LOADING_TEXT;
+    [wsiParentVC.view addSubview:wsiActivityIndicator];
+    [wsiActivityIndicator showWhileExecuting:@selector(myTask) onTarget:self withObject:nil animated:YES];
+}
+
+#pragma MBProgressHUD delegate methods
+- (void) hudWasHidden:(MBProgressHUD *)hud {
+	// Remove wsiActivityIndicator from screen when the wsiActivityIndicator was hidded
+    [self releaseActivityIndicator];
+}
+
+#pragma mark -
+#pragma mark Request Methods
+
+-(void) sendRequest:(NSString *)postString PostXmlData:(NSData *)postData Req_Type:(NSString *)reqType Req_url:(NSString *)reqUrl reqName:(NSString *)name reqVersion:(NSString *)version {
+
+    [self showIndicator];
+    postReqString = postString;
+    postReqData = postData;
+    postReqType=reqType;
+    postReqUrl = reqUrl;
+    reqName = name;
+    reqVersion = version;
+    [self postRequest];
+}
+
+-(void)postRequest{
+    NSString *postLength = [NSString stringWithFormat:@"%d", [postReqData length]];
+    NSMutableURLRequest *request = [[NSMutableURLRequest alloc] init];
+    NSString *poststring = [[NSString alloc]initWithData:postReqData encoding:NSUTF8StringEncoding];
+    NSLog(@"postString : %@",poststring);
+    NSString *posturl = [NSString stringWithFormat:@"%@",postReqUrl];
+    
+    [request setURL:[NSURL URLWithString:posturl]];
+    [request setHTTPMethod:@"POST"];
+    [request setValue:postLength forHTTPHeaderField:@"Content-Length"];
+    [request setValue:@"application/x-www-form-urlencoded" forHTTPHeaderField:@"Content-Type"];
+    [request setHTTPBody:postReqData];
+    NSURLConnection *connection = [[NSURLConnection alloc] initWithRequest:request delegate:self];
+    self.connection = connection;
+    [connection start];
+  
+}
+
+/* this method might be calling more than one times according to incoming data size */
+-(void)connection:(NSURLConnection *)connection didReceiveData:(NSData *)data{
+    receivedData = data;
+}
+
+/* this method called to store cached response for this connection  */
+- (NSCachedURLResponse *)connection:(NSURLConnection *)connection
+                  willCacheResponse:(NSCachedURLResponse*)cachedResponse {
+    // Return nil to indicate not necessary to store a cached response for this connection
+    return nil;
+}
+
+/* if there is an error occured, this method will be called by connection */
+-(void)connection:(NSURLConnection *)connection didFailWithError:(NSError *)error{
+    [self hideIndicator];
+    if (statusCode!=200) {
+        [[[UIAlertView alloc] initWithTitle:NSLocalizedString(@"Error", @"")
+                                    message:[error localizedDescription]
+                                   delegate:nil
+                          cancelButtonTitle:NSLocalizedString(@"OK", @"")
+                          otherButtonTitles:nil] show];
+        
+    }
+    NSLog(@"FailWithError %@" , error);
+}
+
+/* if data is successfully received, this method will be called by connection */
+-(void)connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)response{
+    
+    receivedData = [[NSMutableData alloc] init];
+    NSHTTPURLResponse *httpResponse;
+    httpResponse = (NSHTTPURLResponse *)response;
+    statusCode = [httpResponse statusCode];
+    NSLog(@"Status code was %d", statusCode);
+    
+}
+
+/* if data is finished loading, this method will be called by connection */
+-(void)connectionDidFinishLoading:(NSURLConnection *)connection{
+    
+    responseString = [[NSString alloc] initWithData:receivedData encoding:NSUTF8StringEncoding];
+    NSLog(@"responseString %@" , responseString);
+    [self doParse:receivedData];
+}
+
+#pragma mark -
+#pragma mark Response Methods
+-(void)doParse:(NSData *)data{
+    NSMutableDictionary *responseDict;
+    if ([postReqType isEqualToString:REGISTER_TYPE]) {
+        WSLogin *logonResp = [[WSLogin alloc]init];
+        responseDict = [logonResp parseLoginResponse:data];
+        [self sendResponse:responseDict];
+    }else if ([postReqType isEqualToString:LOGIN_TYPE]) {
+        WSLogin *logonResp = [[WSLogin alloc]init];
+        responseDict = [logonResp parseLoginResponse:data];
+        [self sendResponse:responseDict];
+    }
+    else if([postReqType isEqualToString:GET_FORM_TYPE]){
+        WSGetForm *getFormResp = [[WSGetForm alloc]init];
+        responseDict = [getFormResp responseData:data withReqFormName:reqName andReqFormVersion:reqVersion];
+        [self sendResponse:responseDict];
+    }else if([postReqType isEqualToString:GET_LOOK_UP_TYPE]){
+        WSGetLookUp *getLookUpResp = [[WSGetLookUp alloc]init];
+        responseDict = [getLookUpResp responseData:data withReqLookUpId:reqName andReqLookUpVersion:reqVersion];
+        [self sendResponse:responseDict];
+    }
+
+}
+
+-(void) sendResponse:(NSMutableDictionary *)respDict{
+    NSString *statusVal;
+    NSArray *error;
+    NSString *errorStr;
+    
+    [NSThread sleepForTimeInterval:1.0];
+    [self hideIndicator];
+    
+    if ([postReqType isEqualToString:LOGIN_TYPE]) {
+        NSMutableArray *status = [respDict objectForKey:@"status"];
+        statusVal = [status objectAtIndex:0];
+        NSLog(@"Login statusVal : %@", statusVal);
+        error = [respDict objectForKey:@"error"];
+        errorStr = [error objectAtIndex:0];
+        NSLog(@"error %@", error);
+        
+        if ([statusVal isEqualToString:@"1"]) {
+            if([delegate conformsToProtocol:@protocol(WebServiceInterfaceDelegate)]){//delegate method to acccess
+                [delegate getResponse:respDict type:postReqType];
+            }
+        }else {
+            if (IS_EMPTY(errorStr)) {
+                errorStr = @"Login Response Failed";
+            }
+            [self showAlert:errorStr];
+        }
+    }
+    
+    if ([postReqType isEqualToString:GET_FORM_TYPE]) {
+        NSMutableDictionary *statusdetails = [respDict objectForKey:@"StatusDetails"];
+        NSMutableDictionary *status = [statusdetails objectForKey:@"StatusDetails"];
+        statusVal = [status objectForKey:@"status"];
+        
+        if ([statusVal isEqualToString:@"1"]) {
+            if([delegate conformsToProtocol:@protocol(WebServiceInterfaceDelegate)]){//delegate method to acccess
+                [delegate getResponse:respDict type:postReqType];
+            }
+        }else {
+            if (IS_EMPTY(errorStr)) {
+                errorStr = @"Get Forms Response Failed";
+            }
+            [self showAlert:errorStr];
+        }
+    }
+    if ([postReqType isEqualToString:GET_LOOK_UP_TYPE]) {
+        NSMutableDictionary *statusdetails = [respDict objectForKey:@"StatusDetails"];
+        NSMutableDictionary *status = [statusdetails objectForKey:@"StatusDetails"];
+        statusVal = [status objectForKey:@"status"];
+        
+        if ([statusVal isEqualToString:@"1"]) {
+            if([delegate conformsToProtocol:@protocol(WebServiceInterfaceDelegate)]){//delegate method to acccess
+                [delegate getResponse:respDict type:postReqType];
+            }
+        }else {
+            if (IS_EMPTY(errorStr)) {
+                errorStr = @"Look Up Response Failed";
+            }
+            [self showAlert:errorStr];
+        }
+    }
+}
+
+
+#pragma mark -
+#pragma mark - Alert
+-(void)showAlert:(NSString*)message{
+	UIAlertView *alert = [[UIAlertView alloc] init];
+	[alert setTitle:FORM_ALERT_INVALID_RESPONSE];
+	[alert setMessage:message];
+	[alert setDelegate:nil];
+	[alert addButtonWithTitle:@"OK"];
+	[alert show];
+}
+- (void)viewDidLoad{
+    [super viewDidLoad];
+}
+
+- (void)didReceiveMemoryWarning{
+    [super didReceiveMemoryWarning];
+}
+
+@end

@@ -1,0 +1,46 @@
+//
+//  WebServiceInterface.h
+//  DDMForms
+//
+//  Created by Manulogix on 19/07/13.
+//  Copyright (c) 2013 Manulogix. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+#import "LoginDetails.h"
+#import "StatusDetails.h"
+#import "DataBaseManager.h"
+#import "MBProgressHUD.h"
+
+@protocol WebServiceInterfaceDelegate<NSObject>
+@required
+-(void)getResponse:(NSMutableDictionary *)resp type:(NSString*)respType;
+@end
+
+@interface WebServiceInterface : UIViewController<NSXMLParserDelegate, MBProgressHUDDelegate,UIAlertViewDelegate>{
+    NSString *postReqString,*postReqType, *postReqUrl;
+    NSData *postReqData;
+    NSData *receivedData;
+    id<NSObject,WebServiceInterfaceDelegate> delegate;
+    NSMutableString *currentElementValue;
+    NSXMLParser *parser;
+    NSMutableString *element;
+    NSMutableArray *employeeArray;
+    NSString *responseString;
+    NSString *reqName;
+    NSString *reqVersion;
+    DataBaseManager *dbManager;
+    int statusCode;
+}
+@property (retain, nonatomic) NSURLConnection *connection;
+@property (retain, nonatomic) NSData *receivedData;
+@property(nonatomic,retain)id<NSObject,WebServiceInterfaceDelegate> delegate;
+
+-(void) sendRequest:(NSString *)postString PostXmlData:(NSData *)postData Req_Type:(NSString *)reqType Req_url:(NSString *)reqUrl reqName:(NSString *)name reqVersion:(NSString *)version ;
+
+
+
+-(void) sendResponse:(NSMutableDictionary *)respDict;
+-(id)   initWithVC  : (UIViewController *)parentVC;
+
+@end
